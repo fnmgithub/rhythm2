@@ -29,12 +29,25 @@ try {
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.DirectMessages,
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildBans,
+    GatewayIntentBits.GuildEmojisAndStickers,
+    GatewayIntentBits.GuildIntegrations,
+    GatewayIntentBits.GuildWebhooks,
+    GatewayIntentBits.GuildInvites,
     GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMessageTyping,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.DirectMessageReactions,
+    GatewayIntentBits.DirectMessageTyping,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildScheduledEvents,
+    GatewayIntentBits.AutoModerationConfiguration,
+    GatewayIntentBits.AutoModerationExecution,
   ],
   partials: [Partials.Message, Partials.Channel],
 })
@@ -46,17 +59,18 @@ client.on('interactionCreate', async interaction => {
     var url = commandInteraction.options.getString("url") ?? "not found";
 
     const queue = player.nodes.create(commandInteraction.guild!, {
-        metadata: {
-          channel: interaction.channel,
-        },
-      });
+      volume: 10,
+      metadata: {
+        channel: interaction.channel,
+      },
+    });
 
     const track = await player
     .search(url, {
       requestedBy: interaction.user,
-      searchEngine: QueryType.YOUTUBE_VIDEO,
+      searchEngine: QueryType.AUTO,
     })
-    .then((x) => x.tracks[0]);
+    .then((x) => x.tracks);
 
     queue.addTrack(track);
 
