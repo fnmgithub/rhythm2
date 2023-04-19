@@ -1,6 +1,6 @@
-import { REST, Routes, GatewayIntentBits, Client, Partials, Message, SlashCommandBuilder, AutocompleteInteraction } from 'discord.js';
+import { REST, Routes, GatewayIntentBits, Client, Partials, Message, SlashCommandBuilder, AutocompleteInteraction, CommandInteraction } from 'discord.js';
 import dotenv from 'dotenv';
-import { Player, QueryType} from 'discord-player';
+import { GuildQueue, Player, QueryType} from 'discord-player';
 
 dotenv.config()
 
@@ -12,7 +12,10 @@ const commands = [
         option.setName('url')
         .setDescription('youtube url')
         .setRequired(true)
-      )
+      ),
+    new SlashCommandBuilder()
+      .setName('next')
+      .setDescription('play next track'),
 ].map(command => command.toJSON());
   
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN!);
@@ -58,30 +61,37 @@ client.on('interactionCreate', async interaction => {
     var commandInteraction = interaction as AutocompleteInteraction;
     var url = commandInteraction.options.getString("url") ?? "not found";
 
-    const queue = player.nodes.create(commandInteraction.guild!, {
+    const queue:GuildQueue = player.nodes.create(commandInteraction.guild!, {
       volume: 10,
       metadata: {
         channel: interaction.channel,
       },
     });
 
-    const track = await player
-    .search(url, {
-      requestedBy: interaction.user,
-      searchEngine: QueryType.AUTO,
-    })
-    .then((x) => x.tracks);
+    switch (commandInteraction.commandName){
+      case "rythm":
+        const track = await player
+        .search(url, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        })
+        .then((x) => x.tracks);
 
-    queue.addTrack(track);
-
-    try {
-        await queue.connect(commandInteraction.channelId);
-    } catch (e){
-        console.log("ボイスチャンネルに参加できませんでした")
-        console.log(e)
+        queue.addTrack(track);
+        if (!queue.isPlaying()) {
+          try {
+              await queue.connect(commandInteraction.channelId);
+          } catch (e){
+              console.log("ボイスチャンネルに参加できませんでした")
+              console.log(e)
+          }
+          await queue.node.play();
+        }
+        break;
+      case "next":
+        queue.node.skip();
+        break;
     }
-
-    await queue.node.play();
 })
 
 client.login(process.env.TOKEN)
